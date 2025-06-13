@@ -8,15 +8,13 @@
 </head>
 <body>
 <h1>ActiveMQ Messages</h1>
-<ul id="messages"></ul>
+<p id="messages"></p>
 
 <script>
   const socket = io();
   const list = document.getElementById('messages');
   socket.on('activemq-message', (msg) => {
-    const li = document.createElement('li');
-    li.textContent = msg;
-    list.appendChild(li);
+    list.innerText = msg;
   });
 </script>
 </body>
