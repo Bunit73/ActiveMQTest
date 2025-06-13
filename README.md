@@ -50,14 +50,18 @@ Or start just the application:
 npm start
 ```
 
-## Code Quality
+## Code Quality and Testing
 
-This project uses linting tools to maintain code quality:
+This project uses linting tools to maintain code quality and testing frameworks to ensure reliability:
 
-- **ESLint** for JavaScript
-- **Pylint** for Python
+- **ESLint** for JavaScript linting
+- **Pylint** for Python linting
+- **Jest** for JavaScript testing
+- **pytest** for Python testing
 
 For more information about the linting setup, see [LINTING.md](LINTING.md).
+
+For more information about the testing setup, see [TESTING.md](TESTING.md).
 
 ## Version Management
 
@@ -80,7 +84,7 @@ To update the versions used in the project:
 
 The update script automatically updates your `.env` file with the versions from `versions.json`.
 
-### Running Linters
+### Running Linters and Tests
 
 ```bash
 # Run all linters
@@ -94,11 +98,28 @@ npm run lint:py
 
 # Fix JavaScript linting issues automatically
 npm run lint:js:fix
+
+# Run JavaScript tests
+npm test
+
+# Run JavaScript tests in watch mode
+npm run test:watch
+
+# Run Python tests
+npm run test:py
+
+# Run all tests (JavaScript and Python)
+npm run test:all
 ```
 
-### Automated Linting
+### Automated Linting and Testing
 
-This project uses GitHub Actions to automatically run linters on pull requests and pushes to the main branch. The workflow configuration is in `.github/workflows/linting.yml`.
+This project uses GitHub Actions to automatically run linters and tests on pull requests and pushes to the main branch. The workflow configuration is in `.github/workflows/linting.yml` and includes:
+
+- Running ESLint on JavaScript files
+- Running Pylint on Python files
+- Running Jest tests for JavaScript
+- Running pytest tests for Python
 
 ## License
 

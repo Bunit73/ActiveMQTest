@@ -17,6 +17,25 @@ module.exports = {
       parserOptions: {
         sourceType: 'script'
       }
+    },
+    {
+      files: [
+        'tests/**/*.js',
+        '__mocks__/**/*.js'
+      ],
+      env: {
+        jest: true
+      },
+      globals: {
+        describe: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly'
+      }
     }
   ],
   parserOptions: {
@@ -29,6 +48,8 @@ module.exports = {
   },
   ignorePatterns: [
     'node_modules/',
-    'public/javascripts/vendor/'
+    'public/javascripts/vendor/',
+    'htmlcov/',
+    'coverage/'
   ]
 };

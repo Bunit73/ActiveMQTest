@@ -33,3 +33,9 @@ var/
 *.swo
 .DS_Store
 .env
+
+# Test coverage
+coverage/
+htmlcov/
+.coverage
+.pytest_cache/
