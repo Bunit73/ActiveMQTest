@@ -10,25 +10,26 @@ __pycache__/
 *$py.class
 *.so
 .Python
-# Environment variables
-.env
-.venv
 env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# IDE
+# Editor directories and files
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# Logs
-logs
-*.log
-
-# OS specific
 .DS_Store
-Thumbs.db
+.env

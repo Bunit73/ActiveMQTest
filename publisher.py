@@ -15,7 +15,8 @@ def main():
     conn.connect(login=creds.USER, passcode=creds.PASS, wait=True)
 
     try:
-        print(f"Connected to broker at {creds.BROKER}, sending time to {creds.DEST} every second...")
+        print(f"Connected to broker at {creds.BROKER}")
+        print(f"Sending time to {creds.DEST} every second...")
         while True:
             # Get current UTC time as ISO string
             now = datetime.datetime.utcnow().isoformat() + 'Z'
