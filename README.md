@@ -68,6 +68,10 @@ npm run lint:py
 npm run lint:js:fix
 ```
 
+### Automated Linting
+
+This project uses GitHub Actions to automatically run linters on pull requests and pushes to the main branch. The workflow configuration is in `.github/workflows/linting.yml`.
+
 ## License
 
 This project is licensed under the MIT License.

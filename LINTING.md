@@ -71,6 +71,21 @@ To run both JavaScript and Python linters at once:
 npm run lint
 ```
 
+## Automated Linting with GitHub Actions
+
+This project uses GitHub Actions to automatically run linters on pull requests and pushes to the main branch. This ensures that all code changes maintain the project's code quality standards.
+
+The workflow configuration is in `.github/workflows/linting.yml` and includes:
+
+- Running ESLint on JavaScript files
+- Running Pylint on Python files
+
+The workflow runs on:
+- Pushes to the main and master branches
+- Pull requests to the main and master branches
+
+This automated process helps catch linting issues early in the development process.
+
 ## Installation
 
 The linting tools are included as development dependencies in the project. After cloning the repository:
