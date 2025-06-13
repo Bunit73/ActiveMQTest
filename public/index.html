@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ActiveMQ → Socket.io</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<h1>ActiveMQ Messages</h1>
+<ul id="messages"></ul>
+
+<script>
+  const socket = io();
+  const list = document.getElementById('messages');
+  socket.on('activemq-message', (msg) => {
+    const li = document.createElement('li');
+    li.textContent = msg;
+    list.appendChild(li);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+﻿version: "3.8"
+
+services:
+  activemq:
+    image: apache/activemq-classic:latest
+    container_name: activemq
+    environment:
+      ACTIVEMQ_ADMIN_LOGIN: "${ACTIVEMQ_ADMIN_LOGIN}"
+      ACTIVEMQ_ADMIN_PASSWORD: "${ACTIVEMQ_ADMIN_PASSWORD}"
+    ports:
+      - "61616:61616"  # OpenWire
+      - "61613:61613"  # STOMP
+      - "8161:8161"    # Web console
+
+  app:
+    image: node:24-alpine     # your Express + Socket.io service
+    container_name: activemq-app
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app       # mount your app code
+    command: ["npm", "start"]
+    ports:
+      - "3000:3000"           # expose your web app
+    depends_on:
+      - activemq
+    environment:
+      ACTIVEMQ_HOST: "${ACTIVEMQ_HOST}"
+      ACTIVEMQ_PORT: "${ACTIVEMQ_PORT}"
+      ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
+      ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
+
+  publisher:
+    image: python:3.9-slim
+    container_name: activemq-publisher
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app       # mount your app code
+    command: >
+      bash -c "pip install -r requirements.txt && 
+              python publisher.py"
+    depends_on:
+      - activemq
+      - app
+    environment:
+      ACTIVEMQ_HOST: "${ACTIVEMQ_HOST}"
+      ACTIVEMQ_PORT: "${ACTIVEMQ_PORT}"
+      ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
+      ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
+      ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
