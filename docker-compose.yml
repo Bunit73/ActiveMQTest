@@ -18,7 +18,8 @@ services:
     working_dir: /usr/src/app
     volumes:
       - ./:/usr/src/app       # mount your app code
-    command: ["npm", "start"]
+    command: ["sh", "/usr/src/app/app_entrypoint.sh"]
+    restart: on-failure
     ports:
       - "3000:3000"           # expose your web app
     depends_on:
@@ -28,6 +29,7 @@ services:
       ACTIVEMQ_PORT: "${ACTIVEMQ_PORT}"
       ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
       ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
+      ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
 
   publisher:
     image: python:3.9-slim
@@ -35,9 +37,8 @@ services:
     working_dir: /usr/src/app
     volumes:
       - ./:/usr/src/app       # mount your app code
-    command: >
-      bash -c "pip install -r requirements.txt && 
-              python publisher.py"
+    command: ["sh", "/usr/src/app/publisher_entrypoint.sh"]
+    restart: on-failure
     depends_on:
       - activemq
       - app

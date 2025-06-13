@@ -4,11 +4,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 const Stomp = require('stomp-client');
 
-const ACTIVEMQ_HOST = 'localhost';
-const ACTIVEMQ_PORT = 61613;
-const QUEUE          = '/queue/test';
-const USER           = 'admin';
-const PASS           = 'admin';
+const ACTIVEMQ_HOST = process.env.ACTIVEMQ_HOST || 'localhost';
+const ACTIVEMQ_PORT = parseInt(process.env.ACTIVEMQ_PORT || '61613');
+const QUEUE          = process.env.ACTIVEMQ_DEST || '/queue/test';
+const USER           = process.env.ACTIVEMQ_USER || 'admin';
+const PASS           = process.env.ACTIVEMQ_PASS || 'admin';
 
 const app    = express();
 const server = http.createServer(app);
