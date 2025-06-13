@@ -13,7 +13,7 @@ services:
       - "8161:8161"    # Web console
 
   app:
-    image: node:24-alpine     # your Express + Socket.io service
+    image: node:${NODE_VERSION:-24}-alpine     # your Express + Socket.io service
     container_name: activemq-app
     working_dir: /usr/src/app
     volumes:
@@ -32,7 +32,7 @@ services:
       ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
 
   publisher:
-    image: python:3.9-slim
+    image: python:${PYTHON_VERSION:-3.9}-slim
     container_name: activemq-publisher
     working_dir: /usr/src/app
     volumes:

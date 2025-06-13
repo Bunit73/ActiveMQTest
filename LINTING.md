@@ -80,6 +80,16 @@ The workflow configuration is in `.github/workflows/linting.yml` and includes:
 - Running ESLint on JavaScript files
 - Running Pylint on Python files
 
+### Version Management
+
+This project uses a centralized approach to manage language versions:
+
+- **versions.json**: The single source of truth for Node.js and Python versions
+- **Docker Compose**: Uses environment variables (from .env file) that reference versions.json
+- **GitHub Actions**: Reads versions directly from versions.json
+
+This ensures consistency across all environments and makes it easy to update versions in one place.
+
 The workflow runs on:
 - Pushes to the main and master branches
 - Pull requests to the main and master branches
