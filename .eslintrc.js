@@ -5,7 +5,10 @@ module.exports = {
     es2021: true,
     node: true
   },
-  extends: 'standard',
+  extends: [
+    'standard',
+    'eslint:recommended'
+  ],
   overrides: [
     {
       env: {
@@ -34,7 +37,10 @@ module.exports = {
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
-        jest: 'readonly'
+        jest: 'readonly',
+        it: 'readonly',
+        xit: 'readonly',
+        fit: 'readonly'
       }
     }
   ],
@@ -44,12 +50,22 @@ module.exports = {
   rules: {
     // Custom rules can be added here
     semi: ['error', 'always'],
-    'no-unused-vars': 'warn'
+    'no-unused-vars': 'warn',
+    'no-console': 'warn',
+    'prefer-const': 'error',
+    'arrow-body-style': ['error', 'as-needed'],
+    'no-var': 'error',
+    'object-shorthand': ['error', 'always'],
+    'prefer-template': 'error',
+    'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 1 }],
+    'eol-last': ['error', 'always'],
+    'quote-props': ['error', 'as-needed']
   },
   ignorePatterns: [
     'node_modules/',
     'public/javascripts/vendor/',
     'htmlcov/',
-    'coverage/'
+    'coverage/',
+    '.venv/'
   ]
 };

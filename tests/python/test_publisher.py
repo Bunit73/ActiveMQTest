@@ -22,6 +22,7 @@ def mock_creds(mocker):
     mock_creds.USER = 'test_user'
     mock_creds.PASS = 'test_pass'
     mock_creds.DEST = '/queue/test'
+    mock_creds.PUBLISHER_DEST = '/queue/publisher'
     return mock_creds
 
 def test_connection_setup(mock_stomp_connection, mock_creds):
@@ -55,7 +56,7 @@ def test_message_sending(mock_stomp_connection, mock_creds, mocker):
 
     # Verify a message was sent with the correct parameters
     mock_stomp_connection.send.assert_called_with(
-        destination=mock_creds.DEST,
+        destination=mock_creds.PUBLISHER_DEST,
         body=fixed_time,
         headers={'content-type': 'text/plain'}
     )
