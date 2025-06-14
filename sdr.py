@@ -91,7 +91,7 @@ def main():
             }
             print(json.dumps(msg))
             conn.send(destination=creds.SDR_DEST, body=json.dumps(msg))
-            time.sleep(0.25)
+            time.sleep(0.06)
     except KeyboardInterrupt:
         print("Interrupted by user.")
     except ImportError as e:

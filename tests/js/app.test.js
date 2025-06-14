@@ -15,15 +15,13 @@ jest.mock('socket.io', () => ({
   }))
 }));
 
-jest.mock('stomp-client', () => {
-  return jest.fn().mockImplementation(() => ({
-    connect: jest.fn((successCallback) => {
-      if (successCallback) successCallback('session-id');
-      return Promise.resolve('session-id');
-    }),
-    subscribe: jest.fn()
-  }));
-});
+jest.mock('stomp-client', () => jest.fn().mockImplementation(() => ({
+  connect: jest.fn((successCallback) => {
+    if (successCallback) successCallback('session-id');
+    return Promise.resolve('session-id');
+  }),
+  subscribe: jest.fn()
+})));
 
 jest.mock('http', () => ({
   createServer: jest.fn(() => ({
