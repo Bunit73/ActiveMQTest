@@ -121,6 +121,101 @@ This project uses GitHub Actions to automatically run linters and tests on pull 
 - Running Jest tests for JavaScript
 - Running pytest tests for Python
 
+## Accessing ActiveMQ
+
+ActiveMQ is now fully exposed and can be accessed from outside Docker using various protocols:
+
+### Web Console
+
+Access the ActiveMQ web console at: http://localhost:8161/admin
+
+Default credentials:
+- Username: admin
+- Password: admin
+
+The web console allows you to:
+- Monitor queues and topics
+- View message counts and statistics
+- Send test messages
+- Configure broker settings
+
+### Connecting with Client Applications
+
+ActiveMQ supports multiple protocols, all of which are exposed:
+
+| Protocol | Port | Use Case | Client Libraries |
+|----------|------|----------|-----------------|
+| STOMP    | 61613 | Simple text-based protocol | stomp.py (Python), stomp.js (JavaScript) |
+| OpenWire | 61616 | Java clients | ActiveMQ, JMS |
+| MQTT     | 1883 | IoT devices | Paho (Python, JavaScript) |
+| AMQP     | 5672 | Advanced messaging | qpid, proton |
+
+### Connection Examples
+
+**Python (STOMP):**
+```python
+import stomp
+conn = stomp.Connection(host_and_ports=[('localhost', 61613)])
+conn.connect('admin', 'admin', wait=True)
+conn.send(destination='/queue/test', body='Hello from Python!')
+```
+
+**JavaScript (STOMP):**
+```javascript
+const client = Stomp.client('ws://localhost:61613');
+client.connect('admin', 'admin', () => {
+  client.send('/queue/test', {}, 'Hello from JavaScript!');
+});
+```
+
+**Java (OpenWire):**
+```java
+ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
+Connection connection = factory.createConnection("admin", "admin");
+// ... continue with JMS operations
+```
+
+### Accessing from Another Machine
+
+To access ActiveMQ from another machine on your network, replace `localhost` with your computer's IP address in all connection strings.
+
+## Using RTL-SDR with Docker
+
+### Windows Users
+
+When using RTL-SDR devices with Docker on Windows, there are some important considerations:
+
+1. **USB Device Access**: Docker Desktop for Windows doesn't support direct USB device passthrough like Linux does. The error message `error gathering device information while adding custom device "/dev/bus/usb": no such file or directory` occurs because the Linux-style device path doesn't exist on Windows.
+
+2. **Simulation Mode**: The sdr.py script now includes a fallback simulation mode that activates automatically when the RTL-SDR device cannot be accessed. This allows the service to run and send simulated spectrum data to ActiveMQ even without physical hardware.
+
+3. **System Dependencies**: The Docker container now installs the necessary system libraries (librtlsdr0 and librtlsdr-dev) required by the pyrtlsdr Python package.
+
+4. **Alternative Solutions**:
+   - The docker-compose.yml has been configured to use `privileged: true` mode, which may help with device access.
+   - For reliable RTL-SDR access on Windows, consider these options:
+     - Run the sdr.py script directly on your Windows host (outside Docker)
+     - Use WSL2 backend for Docker Desktop and connect the USB device to WSL2
+     - Use a virtual machine running Linux with USB passthrough
+
+3. **Direct Windows Usage**:
+   If you prefer to run the SDR script directly on Windows:
+   ```bash
+   pip install -r requirements.txt
+   python sdr.py
+   ```
+
+4. **WSL2 Configuration**:
+   If using WSL2 backend for Docker:
+   - Connect your RTL-SDR device
+   - In PowerShell (as Administrator), run:
+     ```powershell
+     usbipd list
+     usbipd bind -b <BUSID>
+     usbipd attach --wsl -b <BUSID>
+     ```
+   - Then in WSL2, verify the device is available with `lsusb`
+
 ## License
 
 This project is licensed under the MIT License.

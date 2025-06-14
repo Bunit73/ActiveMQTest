@@ -8,9 +8,17 @@ services:
       ACTIVEMQ_ADMIN_LOGIN: "${ACTIVEMQ_ADMIN_LOGIN}"
       ACTIVEMQ_ADMIN_PASSWORD: "${ACTIVEMQ_ADMIN_PASSWORD}"
     ports:
-      - "61616:61616"  # OpenWire
-      - "61613:61613"  # STOMP
-      - "8161:8161"    # Web console
+      - "0.0.0.0:61616:61616"  # OpenWire protocol - for Java clients
+      - "0.0.0.0:61613:61613"  # STOMP protocol - for Python/JS clients
+      - "0.0.0.0:8161:8161"    # Web console - access via http://localhost:8161/admin (admin/admin)
+      - "0.0.0.0:1883:1883"    # MQTT protocol
+      - "0.0.0.0:5672:5672"    # AMQP protocol
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/localhost/61613"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   app:
     image: node:${NODE_VERSION:-24}-alpine     # your Express + Socket.io service
@@ -23,7 +31,8 @@ services:
     ports:
       - "3000:3000"           # expose your web app
     depends_on:
-      - activemq
+      activemq:
+        condition: service_healthy
     environment:
       ACTIVEMQ_HOST: "${ACTIVEMQ_HOST}"
       ACTIVEMQ_PORT: "${ACTIVEMQ_PORT}"
@@ -40,11 +49,34 @@ services:
     command: ["sh", "/usr/src/app/publisher_entrypoint.sh"]
     restart: on-failure
     depends_on:
-      - activemq
-      - app
+      activemq:
+        condition: service_healthy
+      app:
+        condition: service_started
     environment:
       ACTIVEMQ_HOST: "${ACTIVEMQ_HOST}"
       ACTIVEMQ_PORT: "${ACTIVEMQ_PORT}"
       ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
       ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
       ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
+
+  sdr:
+    image: python:3.9.16-slim
+    container_name: activemq-sdr
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app       # mount your app code
+    command: ["sh", "/usr/src/app/sdr_entrypoint.sh"]
+    restart: on-failure
+    depends_on:
+      activemq:
+        condition: service_healthy
+    environment:
+      ACTIVEMQ_HOST: "${ACTIVEMQ_HOST}"
+      ACTIVEMQ_PORT: "${ACTIVEMQ_PORT}"
+      ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
+      ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
+      ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
+    # For Windows Docker Desktop, USB devices cannot be accessed directly
+    # Run this container in privileged mode instead
+    privileged: true
