@@ -39,6 +39,8 @@ services:
       ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
       ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
       ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
+      ACTIVEMQ_SDR_DEST: "${ACTIVEMQ_SDR_DEST:-/queue/sdr}"
+      ACTIVEMQ_PUBLISHER_DEST: "${ACTIVEMQ_PUBLISHER_DEST:-/queue/publisher}"
 
   publisher:
     image: python:${PYTHON_VERSION:-3.9}-slim
@@ -59,6 +61,7 @@ services:
       ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
       ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
       ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
+      ACTIVEMQ_PUBLISHER_DEST: "${ACTIVEMQ_PUBLISHER_DEST:-/queue/publisher}"
 
   sdr:
     image: python:3.9.16-slim
@@ -77,6 +80,7 @@ services:
       ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
       ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
       ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
+      ACTIVEMQ_SDR_DEST: "${ACTIVEMQ_SDR_DEST:-/queue/sdr}"
     # For Windows Docker Desktop, USB devices cannot be accessed directly
     # Run this container in privileged mode instead
     privileged: true

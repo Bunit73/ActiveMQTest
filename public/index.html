@@ -5,17 +5,311 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ActiveMQ → Socket.io</title>
   <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      background-color: #343a40;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 30px;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+    .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.8;
+      margin-top: 10px;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+    }
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      transition: transform 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .card-title {
+      margin: 0;
+      color: #343a40;
+      font-size: 1.5rem;
+    }
+    .timestamp {
+      color: #6c757d;
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+    .message-content {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    .status-active {
+      background-color: #28a745;
+      box-shadow: 0 0 5px #28a745;
+    }
+    .status-inactive {
+      background-color: #dc3545;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      color: #6c757d;
+    }
+    .spectrum-container {
+      height: 200px;
+      margin-top: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+    .spectrum-bar {
+      position: absolute;
+      bottom: 0;
+      background-color: #007bff;
+      width: 3px;
+      margin-right: 1px;
+      border-radius: 3px 3px 0 0;
+      transition: height 0.2s ease;
+    }
+  </style>
 </head>
 <body>
-<h1>ActiveMQ Messages</h1>
-<p id="messages"></p>
+  <header>
+    <h1>ActiveMQ Real-time Dashboard</h1>
+    <div class="subtitle">Monitoring SDR and Publisher data streams</div>
+  </header>
 
-<script>
-  const socket = io();
-  const list = document.getElementById('messages');
-  socket.on('activemq-message', (msg) => {
-    list.innerText = msg;
-  });
-</script>
+  <div class="container">
+    <div class="dashboard">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span id="sdr-status-indicator" class="status-indicator status-inactive"></span>
+            SDR Data
+          </h2>
+          <span id="sdr-timestamp" class="timestamp">Waiting for data...</span>
+        </div>
+        <div id="spectrum-visualization" class="spectrum-container"></div>
+        <div id="sdr-message" class="message-content">Waiting for SDR data...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span id="publisher-status-indicator" class="status-indicator status-inactive"></span>
+            Publisher Data
+          </h2>
+          <span id="publisher-timestamp" class="timestamp">Waiting for data...</span>
+        </div>
+        <div id="publisher-message" class="message-content">Waiting for publisher data...</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>ActiveMQ Test Project</p>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const sdrMessage = document.getElementById('sdr-message');
+    const sdrTimestamp = document.getElementById('sdr-timestamp');
+    const sdrStatusIndicator = document.getElementById('sdr-status-indicator');
+    const publisherMessage = document.getElementById('publisher-message');
+    const publisherTimestamp = document.getElementById('publisher-timestamp');
+    const publisherStatusIndicator = document.getElementById('publisher-status-indicator');
+    const spectrumContainer = document.getElementById('spectrum-visualization');
+
+    // Last update times to check for stale data
+    let lastSdrUpdate = 0;
+    let lastPublisherUpdate = 0;
+
+    // Handle SDR messages
+    socket.on('sdr-message', (msg) => {
+      try {
+        // Format the message nicely
+        sdrMessage.textContent = JSON.stringify(msg, null, 2);
+
+        // Update timestamp
+        const date = new Date(msg.timestamp * 1000);
+        sdrTimestamp.textContent = `Updated: ${date.toLocaleString()}`;
+
+        // Update status indicator
+        sdrStatusIndicator.className = 'status-indicator status-active';
+        lastSdrUpdate = Date.now();
+
+        // Visualize spectrum data if available
+        if (msg.spectrum_db && Array.isArray(msg.spectrum_db)) {
+          updateSpectrumVisualization(msg.spectrum_db);
+        }
+      } catch (error) {
+        console.error('Error processing SDR message:', error);
+      }
+    });
+
+    // Handle publisher messages
+    socket.on('publisher-message', (msg) => {
+      try {
+        // Display the message
+        publisherMessage.textContent = msg;
+
+        // Update timestamp
+        publisherTimestamp.textContent = `Updated: ${new Date().toLocaleString()}`;
+
+        // Update status indicator
+        publisherStatusIndicator.className = 'status-indicator status-active';
+        lastPublisherUpdate = Date.now();
+      } catch (error) {
+        console.error('Error processing publisher message:', error);
+      }
+    });
+
+    // For backward compatibility
+    socket.on('activemq-message', (msg) => {
+      // Try to determine if it's an SDR or publisher message
+      try {
+        const jsonMsg = JSON.parse(msg);
+        if (jsonMsg.spectrum_db) {
+          // It's an SDR message
+          sdrMessage.textContent = JSON.stringify(jsonMsg, null, 2);
+          const date = new Date(jsonMsg.timestamp * 1000);
+          sdrTimestamp.textContent = `Updated: ${date.toLocaleString()}`;
+          sdrStatusIndicator.className = 'status-indicator status-active';
+          lastSdrUpdate = Date.now();
+
+          if (jsonMsg.spectrum_db && Array.isArray(jsonMsg.spectrum_db)) {
+            updateSpectrumVisualization(jsonMsg.spectrum_db);
+          }
+        }
+      } catch (e) {
+        // If it's not JSON, it might be a publisher message
+        if (typeof msg === 'string' && msg.includes('T') && msg.endsWith('Z')) {
+          publisherMessage.textContent = msg;
+          publisherTimestamp.textContent = `Updated: ${new Date().toLocaleString()}`;
+          publisherStatusIndicator.className = 'status-indicator status-active';
+          lastPublisherUpdate = Date.now();
+        }
+      }
+    });
+
+    // Function to update the spectrum visualization
+    function updateSpectrumVisualization(spectrumData) {
+      // Clear previous visualization
+      spectrumContainer.innerHTML = '';
+
+      // Downsample data if there are too many points
+      let displayData = spectrumData;
+      const maxBars = 100; // Maximum number of bars to display
+
+      if (spectrumData.length > maxBars) {
+        // Downsample by averaging groups of points
+        const factor = Math.ceil(spectrumData.length / maxBars);
+        displayData = [];
+
+        for (let i = 0; i < spectrumData.length; i += factor) {
+          const chunk = spectrumData.slice(i, i + factor);
+          const avg = chunk.reduce((sum, val) => sum + val, 0) / chunk.length;
+          displayData.push(avg);
+        }
+      }
+
+      // Calculate the width of each bar
+      const containerWidth = spectrumContainer.clientWidth;
+      // Ensure bars fit within container with a small gap between them
+      const totalBars = displayData.length;
+      // Make sure barWidth is at least 1 pixel
+      const barWidth = Math.max(1, Math.floor((containerWidth - totalBars) / totalBars));
+
+      // Find min and max values for scaling
+      const minValue = Math.min(...displayData);
+      const maxValue = Math.max(...displayData);
+      const range = maxValue - minValue;
+
+      // Create bars for each data point
+      displayData.forEach((value, index) => {
+        const bar = document.createElement('div');
+        bar.className = 'spectrum-bar';
+
+        // Normalize height to container height (0-100%)
+        const normalizedHeight = range === 0 ? 50 : ((value - minValue) / range) * 100;
+        bar.style.height = `${normalizedHeight}%`;
+
+        // Position the bar
+        const leftPosition = index * (barWidth + 1);
+        bar.style.left = `${leftPosition}px`;
+        bar.style.width = `${barWidth}px`;
+
+        // Color based on value (blue to red gradient)
+        const hue = 240 - (normalizedHeight * 2.4); // 240 (blue) to 0 (red)
+        bar.style.backgroundColor = `hsl(${hue}, 80%, 50%)`;
+
+        spectrumContainer.appendChild(bar);
+      });
+    }
+
+    // Check for stale data every 10 seconds
+    setInterval(() => {
+      const now = Date.now();
+
+      // Check SDR data (inactive after 30 seconds)
+      if (now - lastSdrUpdate > 30000) {
+        sdrStatusIndicator.className = 'status-indicator status-inactive';
+      }
+
+      // Check publisher data (inactive after 30 seconds)
+      if (now - lastPublisherUpdate > 30000) {
+        publisherStatusIndicator.className = 'status-indicator status-inactive';
+      }
+    }, 10000);
+  </script>
 </body>
 </html>

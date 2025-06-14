@@ -16,12 +16,12 @@ def main():
 
     try:
         print(f"Connected to broker at {creds.BROKER}")
-        print(f"Sending time to {creds.DEST} every second...")
+        print(f"Sending time to {creds.PUBLISHER_DEST} every second...")
         while True:
             # Get current UTC time as ISO string
             now = datetime.datetime.utcnow().isoformat() + 'Z'
             conn.send(
-                destination=creds.DEST,
+                destination=creds.PUBLISHER_DEST,
                 body=now,
                 headers={'content-type': 'text/plain'}
             )

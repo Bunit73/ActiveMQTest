@@ -1,5 +1,7 @@
 ﻿# ActiveMQ Test Project
 
+![ActiveMQ Test Project](img.png)
+
 This is a test project for working with ActiveMQ using Node.js and Python.
 
 ## Project Structure

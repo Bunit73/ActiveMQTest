@@ -90,7 +90,7 @@ def main():
                 'simulated': use_simulation
             }
             print(json.dumps(msg))
-            conn.send(destination=creds.DEST, body=json.dumps(msg))
+            conn.send(destination=creds.SDR_DEST, body=json.dumps(msg))
             time.sleep(0.5)
     except KeyboardInterrupt:
         print("Interrupted by user.")
