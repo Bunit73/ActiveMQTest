@@ -181,42 +181,90 @@ Connection connection = factory.createConnection("admin", "admin");
 
 To access ActiveMQ from another machine on your network, replace `localhost` with your computer's IP address in all connection strings.
 
-## Using RTL-SDR with Docker
+## Using RTL-SDR
 
-### Windows Users
+The project now supports two ways to run the RTL-SDR component:
+1. **Locally on your host machine** (recommended for Windows users)
+2. **In a Docker container** (better for Linux users)
 
-When using RTL-SDR devices with Docker on Windows, there are some important considerations:
+### Running sdr.py Locally (Windows)
 
-1. **USB Device Access**: Docker Desktop for Windows doesn't support direct USB device passthrough like Linux does. The error message `error gathering device information while adding custom device "/dev/bus/usb": no such file or directory` occurs because the Linux-style device path doesn't exist on Windows.
+Running sdr.py directly on your Windows machine provides better USB device access and simplifies the setup:
 
-2. **Simulation Mode**: The sdr.py script now includes a fallback simulation mode that activates automatically when the RTL-SDR device cannot be accessed. This allows the service to run and send simulated spectrum data to ActiveMQ even without physical hardware.
+1. **Run the setup script**:
+   ```
+   setup_local_sdr.bat
+   ```
+   This script will:
+   - Create a Python virtual environment
+   - Install required Python dependencies
+   - Create a default .env file if needed
+   - Provide instructions for RTL-SDR driver installation
 
-3. **System Dependencies**: The Docker container now installs the necessary system libraries (librtlsdr0 and librtlsdr-dev) required by the pyrtlsdr Python package.
+2. **Install RTL-SDR drivers** (if using physical hardware):
+   - Download Zadig from https://zadig.akeo.ie/
+   - Plug in your RTL-SDR device
+   - Run Zadig, select your RTL-SDR device, and install the WinUSB driver
+   - Download the RTL-SDR software from https://www.rtl-sdr.com/downloads
+   - Extract the files and add the bin directory to your PATH
 
-4. **Alternative Solutions**:
-   - The docker-compose.yml has been configured to use `privileged: true` mode, which may help with device access.
-   - For reliable RTL-SDR access on Windows, consider these options:
-     - Run the sdr.py script directly on your Windows host (outside Docker)
-     - Use WSL2 backend for Docker Desktop and connect the USB device to WSL2
-     - Use a virtual machine running Linux with USB passthrough
+3. **Start the ActiveMQ and other services**:
+   ```
+   docker-compose up -d
+   ```
 
-3. **Direct Windows Usage**:
-   If you prefer to run the SDR script directly on Windows:
-   ```bash
-   pip install -r requirements.txt
+4. **Test the ActiveMQ connection**:
+   ```
+   .venv\Scripts\activate
+   python test_activemq_connection.py
+   ```
+   This will verify that your local machine can connect to the ActiveMQ container.
+
+   > **Important**: When running scripts locally, make sure your `.env` file has `ACTIVEMQ_HOST=localhost` (not "activemq"). The setup script creates this file correctly, but if you're having connection issues, check this setting.
+
+5. **Run sdr.py**:
+   ```
    python sdr.py
    ```
 
-4. **WSL2 Configuration**:
-   If using WSL2 backend for Docker:
-   - Connect your RTL-SDR device
-   - In PowerShell (as Administrator), run:
-     ```powershell
-     usbipd list
-     usbipd bind -b <BUSID>
-     usbipd attach --wsl -b <BUSID>
-     ```
-   - Then in WSL2, verify the device is available with `lsusb`
+The script will automatically detect if an RTL-SDR device is available. If not, it will run in simulation mode.
+
+### Running sdr.py in Docker (Linux)
+
+For Linux users, running in Docker with USB passthrough is still an option:
+
+1. **Modify docker-compose.yml**:
+   Uncomment the sdr service section in docker-compose.yml if you want to run it in Docker.
+
+2. **USB Device Access**:
+   Linux supports direct USB device passthrough to Docker. The docker-compose.yml file is configured to pass through USB devices to the container.
+
+3. **Start all services**:
+   ```bash
+   docker-compose up
+   ```
+
+### WSL2 Configuration (Windows with Docker)
+
+If you prefer to use Docker on Windows with WSL2:
+
+1. Connect your RTL-SDR device
+2. In PowerShell (as Administrator), run:
+   ```powershell
+   usbipd list
+   usbipd bind -b <BUSID>
+   usbipd attach --wsl -b <BUSID>
+   ```
+3. Then in WSL2, verify the device is available with `lsusb`
+4. Start the Docker containers with `docker-compose up`
+
+### Simulation Mode
+
+The sdr.py script includes a fallback simulation mode that activates automatically when:
+- The pyrtlsdr module is not available
+- An RTL-SDR device cannot be accessed
+
+This allows the service to run and send simulated spectrum data to ActiveMQ even without physical hardware.
 
 ## License
 

@@ -1,0 +1,64 @@
+﻿FROM ubuntu:22.04
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install Python 3.9 and pip
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y \
+    python3.9 \
+    python3.9-dev \
+    python3.9-distutils \
+    python3-pip \
+    && ln -sf /usr/bin/python3.9 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip
+
+# Install system dependencies for SDR libraries
+# Based on RTL-SDR Quick Start Guide: https://www.rtl-sdr.com/rtl-sdr-quick-start-guide/
+RUN apt-get update && apt-get install -y \
+    librtlsdr0 librtlsdr-dev \
+    soapysdr-tools libsoapysdr-dev python3-soapysdr \
+    build-essential pkg-config libffi-dev usbutils \
+    cmake git \
+    # RTL-SDR specific tools
+    rtl-sdr \
+    # GNU Radio dependencies
+    gnuradio python3-gnuradio python3-gnuradio-companion \
+    gr-osmosdr \
+    # Audio and Avahi dependencies
+    avahi-daemon avahi-utils libnss-mdns \
+    libasound2 libasound2-dev alsa-utils \
+    pulseaudio pulseaudio-utils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Blacklist DVB-T modules that conflict with RTL-SDR
+RUN echo "blacklist dvb_usb_rtl28xxu" > /etc/modprobe.d/blacklist-rtl.conf && \
+    echo "blacklist rtl2832" >> /etc/modprobe.d/blacklist-rtl.conf && \
+    echo "blacklist rtl2830" >> /etc/modprobe.d/blacklist-rtl.conf
+
+# Set up udev rules for RTL-SDR (allows non-root access)
+RUN echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2838", MODE="0666"' > /etc/udev/rules.d/rtl-sdr.rules && \
+    echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2832", MODE="0666"' >> /etc/udev/rules.d/rtl-sdr.rules
+
+# Clone and build the latest rtl-sdr code from osmocom
+RUN cd /tmp && \
+    git clone git://git.osmocom.org/rtl-sdr.git && \
+    cd rtl-sdr && \
+    mkdir build && \
+    cd build && \
+    cmake ../ -DINSTALL_UDEV_RULES=ON && \
+    make && \
+    make install && \
+    ldconfig && \
+    cd / && \
+    rm -rf /tmp/rtl-sdr
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# The entrypoint script will handle the rest of the setup
+CMD ["bash", "/usr/src/app/sdr_entrypoint.sh"]

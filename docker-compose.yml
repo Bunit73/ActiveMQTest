@@ -62,25 +62,3 @@ services:
       ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
       ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
       ACTIVEMQ_PUBLISHER_DEST: "${ACTIVEMQ_PUBLISHER_DEST:-/queue/publisher}"
-
-  sdr:
-    image: python:3.9.16-slim
-    container_name: activemq-sdr
-    working_dir: /usr/src/app
-    volumes:
-      - ./:/usr/src/app       # mount your app code
-    command: ["sh", "/usr/src/app/sdr_entrypoint.sh"]
-    restart: on-failure
-    depends_on:
-      activemq:
-        condition: service_healthy
-    environment:
-      ACTIVEMQ_HOST: "${ACTIVEMQ_HOST}"
-      ACTIVEMQ_PORT: "${ACTIVEMQ_PORT}"
-      ACTIVEMQ_USER: "${ACTIVEMQ_USER}"
-      ACTIVEMQ_PASS: "${ACTIVEMQ_PASS}"
-      ACTIVEMQ_DEST: "${ACTIVEMQ_DEST:-/queue/test}"
-      ACTIVEMQ_SDR_DEST: "${ACTIVEMQ_SDR_DEST:-/queue/sdr}"
-    # For Windows Docker Desktop, USB devices cannot be accessed directly
-    # Run this container in privileged mode instead
-    privileged: true
