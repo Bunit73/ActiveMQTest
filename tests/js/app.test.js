@@ -2,7 +2,8 @@
 // Mock the dependencies before requiring the app
 jest.mock('express', () => {
   const mockExpress = jest.fn(() => ({
-    use: jest.fn()
+    use: jest.fn(),
+    get: jest.fn()
   }));
   mockExpress.static = jest.fn(() => 'static-middleware');
   return mockExpress;
@@ -69,6 +70,8 @@ describe('App Configuration', () => {
       ACTIVEMQ_HOST: 'localhost',
       ACTIVEMQ_PORT: 61613,
       QUEUE: '/queue/test',
+      SDR_QUEUE: '/queue/sdr',
+      PUBLISHER_QUEUE: '/queue/publisher',
       USER: 'admin',
       PASS: 'admin',
       PORT: 3000
@@ -101,6 +104,8 @@ describe('App Configuration', () => {
       ACTIVEMQ_HOST: 'activemq-host',
       ACTIVEMQ_PORT: 1234,
       QUEUE: '/queue/custom',
+      SDR_QUEUE: '/queue/sdr',
+      PUBLISHER_QUEUE: '/queue/publisher',
       USER: 'user',
       PASS: 'pass',
       PORT: '8080'

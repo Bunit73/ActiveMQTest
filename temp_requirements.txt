@@ -1,7 +1,0 @@
-﻿stomp.py>=8.1.0
-python-dotenv>=0.21.1
-pylint>=3.0.2
-pytest>=7.4.3
-pytest-mock>=3.12.0
-pytest-cov>=4.1.0
-numpy>=1.26.0

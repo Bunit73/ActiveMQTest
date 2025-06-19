@@ -130,7 +130,7 @@ def generate_simulated_samples(size=1024, center_freq=100e6, sample_rate=2.048e6
 
     return samples
 
-def send_to_activemq(conn, message_data, message_type="sample", spectrum_data=None, center_freq=100e6, sample_rate=2.048e6, simulated=False):
+def send_to_activemq(conn, message_data, message_type="sample", spectrum_data=None, center_freq=162.450e6, sample_rate=2.048e6, simulated=False):
     """
     Send data to ActiveMQ.
 
@@ -185,7 +185,7 @@ def setup_sdr():
 
         # Configure SDR settings
         sdr.sample_rate = 2.048e6  # Hz
-        sdr.center_freq = 100e6    # Hz (adjust to a frequency of interest, e.g., FM radio)
+        sdr.center_freq = 162.450e6    # Hz (adjust to a frequency of interest, e.g., FM radio)
         sdr.freq_correction = 60   # PPM
         sdr.gain = 'auto'
 
@@ -268,7 +268,7 @@ def read_and_print_samples(sdr, activemq_conn=None, num_samples=1024, simulated=
             center_freq = sdr.center_freq
             sample_rate = sdr.sample_rate
         else:
-            center_freq = 100e6  # Default center frequency
+            center_freq = 162.450e6  # Default center frequency
             sample_rate = 2.048e6  # Default sample rate
 
         # Track statistics across all reads
