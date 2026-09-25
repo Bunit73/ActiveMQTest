@@ -1,6 +1,16 @@
 ﻿# Testing Guide
 
-This project uses testing frameworks to ensure code quality and reliability for both JavaScript and Python code.
+This project has JavaScript and Python unit tests. Most messaging behavior is mocked, so passing unit tests does not verify a live ActiveMQ connection.
+
+## Verification notes
+
+During the documentation cleanup on September 25, 2026, the existing suites were run on Windows with Node.js 24.2.0 and Python 3.13.0:
+
+- JavaScript: 4 tests passed across 2 suites.
+- Python: 8 passed, 1 failed, and 3 errored. The SDR tests still patch a nonexistent `sdr.creds` attribute, and the simulated-sample test assumes a magnitude limit that conflicts with the generated signal peaks.
+- `docker compose --env-file .env.example config --quiet` validated the Compose configuration. The Docker engine was not running, so the complete broker-to-browser flow and physical SDR hardware were not verified.
+
+These are existing test limitations; the cleanup did not change application behavior. Run the commands below to check the current state in your environment.
 
 ## JavaScript Testing with Jest
 
@@ -86,20 +96,7 @@ npm run test:all
 
 ## Automated Testing with GitHub Actions
 
-This project uses GitHub Actions to automatically run tests on pull requests and pushes to the main branch. This ensures that all code changes maintain the project's quality standards.
-
-The workflow configuration is in `.github/workflows/linting.yml` and includes:
-
-- Running ESLint on JavaScript files
-- Running Pylint on Python files
-- Running Jest tests for JavaScript
-- Running pytest tests for Python
-
-The workflow runs on:
-- Pushes to the main and master branches
-- Pull requests to the main and master branches
-
-This automated process helps catch issues early in the development process.
+The workflow in `.github/workflows/linting.yml` is triggered by pushes and pull requests to `main` and `master`. Currently only its version-reading job is active; the ESLint, Pylint, Jest, and pytest jobs are commented out. Run tests locally to verify a change.
 
 ## Installation
 

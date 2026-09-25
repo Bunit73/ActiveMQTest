@@ -73,28 +73,11 @@ npm run lint
 
 ## Automated Linting with GitHub Actions
 
-This project uses GitHub Actions to automatically run linters on pull requests and pushes to the main branch. This ensures that all code changes maintain the project's code quality standards.
-
-The workflow configuration is in `.github/workflows/linting.yml` and includes:
-
-- Running ESLint on JavaScript files
-- Running Pylint on Python files
+The workflow in `.github/workflows/linting.yml` currently runs only its version-reading job. The ESLint, Pylint, Jest, and pytest jobs are commented out; run checks locally before relying on their results.
 
 ### Version Management
 
-This project uses a centralized approach to manage language versions:
-
-- **versions.json**: The single source of truth for Node.js and Python versions
-- **Docker Compose**: Uses environment variables (from .env file) that reference versions.json
-- **GitHub Actions**: Reads versions directly from versions.json
-
-This ensures consistency across all environments and makes it easy to update versions in one place.
-
-The workflow runs on:
-- Pushes to the main and master branches
-- Pull requests to the main and master branches
-
-This automated process helps catch linting issues early in the development process.
+GitHub Actions reads Node.js and Python versions from `versions.json`. Docker Compose reads `NODE_VERSION` and `PYTHON_VERSION` from `.env`, with defaults in `docker-compose.yml`. These files are not synchronized automatically; update them together when changing runtime versions.
 
 ## Installation
 

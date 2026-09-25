@@ -1,271 +1,121 @@
-﻿# ActiveMQ Test Project
+# ActiveMQ messaging and SDR demo
 
-![ActiveMQ Test Project](img.png)
+A small project for moving live data from Python to a browser through ActiveMQ. A Python publisher sends timestamps over STOMP; a Node.js/Express service consumes the messages and forwards them to the browser with Socket.IO. An optional RTL-SDR script computes signal spectra with NumPy and sends them through a separate queue.
 
-This is a test project for working with ActiveMQ using Node.js and Python.
+This is an experiment in message flow and signal visualization. The included configuration is for a local development demo, with default broker credentials and ports exposed to the host. It is not a production deployment.
 
-## Project Structure
+![ActiveMQ demo](img.png)
 
-- `app.js` - Main Express.js application
-- `publisher.py` - Python script for publishing messages to ActiveMQ
-- `public/` - Static files for the web interface
-- `routes/` - Express.js route handlers
+## Run the demo with Docker Compose
 
-## Getting Started
+Install Docker with Compose, then clone this repository and open a terminal in its directory.
 
-### Prerequisites
+1. Copy the included environment template:
 
-- Node.js (version specified in versions.json)
-- Python (version specified in versions.json)
-- Docker and Docker Compose (for running ActiveMQ)
-
-> Note: This project uses a centralized version management approach with versions.json as the single source of truth for language versions.
-
-### Installation
-
-1. Clone the repository
-2. Create a .env file from the template:
    ```bash
-   cp .env
-   ```
-   (Edit the .env file if you need to customize any settings)
-3. Install JavaScript dependencies:
-   ```bash
-   npm install
-   ```
-4. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
+   cp .env.example .env
    ```
 
-### Running the Application
+   In PowerShell, use `Copy-Item .env.example .env`.
 
-Start the ActiveMQ container and the application:
+2. Start the broker, web app, and timestamp publisher:
+
+   ```bash
+   docker compose up
+   ```
+
+   The entrypoint scripts install dependencies on startup. Leave `ACTIVEMQ_HOST=activemq` in `.env` for these containerized services.
+
+3. Open [the web app](http://localhost:3000), [the latest messages view](http://localhost:3000/latest-view), or [the JSON endpoint](http://localhost:3000/latest). The timestamp publisher sends a message every second; SDR data appears only when the optional SDR script is running.
+
+Stop the services with Ctrl+C, then `docker compose down`. The [ActiveMQ console](http://localhost:8161/admin) uses the local demo login `admin` / `admin`.
+
+## Run the app and Python scripts locally
+
+The repository's `versions.json` records Node.js 24 and Python 3.10. Use a fresh Python virtual environment; generated environments are not included in source control.
+
+Start just the broker:
 
 ```bash
-docker-compose up
+docker compose up -d activemq
 ```
 
-Or start just the application:
+Set `ACTIVEMQ_HOST=localhost` in `.env` when the app and Python scripts run on your host. Change it back to `activemq` before starting the app or publisher through Compose.
+
+Install dependencies:
 
 ```bash
-npm start
+npm ci
+python -m venv .venv
 ```
 
-## Code Quality and Testing
-
-This project uses linting tools to maintain code quality and testing frameworks to ensure reliability:
-
-- **ESLint** for JavaScript linting
-- **Pylint** for Python linting
-- **Jest** for JavaScript testing
-- **pytest** for Python testing
-
-For more information about the linting setup, see [LINTING.md](LINTING.md).
-
-For more information about the testing setup, see [TESTING.md](TESTING.md).
-
-## Version Management
-
-This project uses a centralized approach to manage language versions:
-
-1. **versions.json**: The single source of truth for Node.js and Python versions
-2. **Docker Compose**: Uses environment variables from .env file
-3. **GitHub Actions**: Reads versions directly from versions.json
-
-### Updating Versions
-
-To update the versions used in the project:
-
-1. Edit `versions.json` to update the version numbers
-2. Run the update script to sync your `.env` file:
-   ```bash
-   npm run update-versions
-   ```
-3. Run `docker-compose down` followed by `docker-compose up` to apply the changes
-
-The update script automatically updates your `.env` file with the versions from `versions.json`.
-
-### Running Linters and Tests
+Activate the environment with `.venv\Scripts\Activate.ps1` in PowerShell, or `source .venv/bin/activate` on macOS/Linux, then install the Python dependencies:
 
 ```bash
-# Run all linters
-npm run lint
+python -m pip install -r requirements.txt
+```
 
-# Run only JavaScript linter
-npm run lint:js
+Run the app and publisher in separate terminals:
 
-# Run only Python linter
-npm run lint:py
+```bash
+node --env-file=.env app.js
+```
 
-# Fix JavaScript linting issues automatically
-npm run lint:js:fix
+```bash
+python publisher.py
+```
 
-# Run JavaScript tests
+The Python scripts load `.env` through `python-dotenv`. `npm start` also runs the app, but uses your shell's environment and the code's defaults; it does not load `.env` automatically.
+
+## Optional RTL-SDR input
+
+With the broker and app running, use the activated Python environment:
+
+```bash
+python test_activemq_connection.py
+python sdr.py
+```
+
+Physical reception requires an RTL-SDR device, the appropriate USB driver, and the native RTL-SDR library available to Python. The script is configured for 162.450 MHz; adjust the settings in `sdr.py` for your device and signal.
+
+For simulated data without the RTL-SDR Python package, use a separate virtual environment with only the runtime dependencies:
+
+```bash
+python -m pip install numpy stomp.py python-dotenv
+python sdr.py
+```
+
+When `rtlsdr` cannot be imported, the script generates simulated samples. Do not rely on automatic fallback when the package is installed but the device cannot initialize; that path currently exits. `Dockerfile.sdr` is experimental and references an entrypoint that is not included, so the instructions here run SDR on the host.
+
+## Project layout
+
+| File | Purpose |
+| --- | --- |
+| `app.js` | Express routes, STOMP subscriptions, and Socket.IO events |
+| `publisher.py` | Timestamp messages for the publisher queue |
+| `sdr.py` | SDR samples, FFT processing, and spectrum messages |
+| `creds.py` | Environment-based Python connection settings |
+| `public/` | Browser interface and styles |
+| `docker-compose.yml` | Broker, web app, and publisher services |
+| `tests/` | Existing JavaScript and Python tests |
+
+## Tests and linting
+
+After installing dependencies, run:
+
+```bash
 npm test
-
-# Run JavaScript tests in watch mode
-npm run test:watch
-
-# Run Python tests
-npm run test:py
-
-# Run all tests (JavaScript and Python)
-npm run test:all
+python -m pytest
+npm run lint:js
+python -m pylint creds.py publisher.py sdr.py test_activemq_connection.py
 ```
 
-### Automated Linting and Testing
+The `test:py` and `lint:py` npm scripts assume a Windows virtual environment at `.venv\Scripts\python`. The direct Python commands above work with an activated environment on any platform. See [TESTING.md](TESTING.md) and [LINTING.md](LINTING.md) for more detail.
 
-This project uses GitHub Actions to automatically run linters and tests on pull requests and pushes to the main branch. The workflow configuration is in `.github/workflows/linting.yml` and includes:
+The GitHub Actions workflow currently reads `versions.json`; its lint and test jobs are commented out. Run checks locally rather than treating a green workflow as evidence that tests passed.
 
-- Running ESLint on JavaScript files
-- Running Pylint on Python files
-- Running Jest tests for JavaScript
-- Running pytest tests for Python
+The current Python suite has known SDR test failures; see [the verification notes](TESTING.md#verification-notes). The JavaScript tests cover configuration and mocked Socket.IO behavior, not a live broker connection.
 
-## Accessing ActiveMQ
+## Runtime versions
 
-ActiveMQ is now fully exposed and can be accessed from outside Docker using various protocols:
-
-### Web Console
-
-Access the ActiveMQ web console at: http://localhost:8161/admin
-
-Default credentials:
-- Username: admin
-- Password: admin
-
-The web console allows you to:
-- Monitor queues and topics
-- View message counts and statistics
-- Send test messages
-- Configure broker settings
-
-### Connecting with Client Applications
-
-ActiveMQ supports multiple protocols, all of which are exposed:
-
-| Protocol | Port | Use Case | Client Libraries |
-|----------|------|----------|-----------------|
-| STOMP    | 61613 | Simple text-based protocol | stomp.py (Python), stomp.js (JavaScript) |
-| OpenWire | 61616 | Java clients | ActiveMQ, JMS |
-| MQTT     | 1883 | IoT devices | Paho (Python, JavaScript) |
-| AMQP     | 5672 | Advanced messaging | qpid, proton |
-
-### Connection Examples
-
-**Python (STOMP):**
-```python
-import stomp
-conn = stomp.Connection(host_and_ports=[('localhost', 61613)])
-conn.connect('admin', 'admin', wait=True)
-conn.send(destination='/queue/test', body='Hello from Python!')
-```
-
-**JavaScript (STOMP):**
-```javascript
-const client = Stomp.client('ws://localhost:61613');
-client.connect('admin', 'admin', () => {
-  client.send('/queue/test', {}, 'Hello from JavaScript!');
-});
-```
-
-**Java (OpenWire):**
-```java
-ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory("tcp://localhost:61616");
-Connection connection = factory.createConnection("admin", "admin");
-// ... continue with JMS operations
-```
-
-### Accessing from Another Machine
-
-To access ActiveMQ from another machine on your network, replace `localhost` with your computer's IP address in all connection strings.
-
-## Using RTL-SDR
-
-The project now supports two ways to run the RTL-SDR component:
-1. **Locally on your host machine** (recommended for Windows users)
-2. **In a Docker container** (better for Linux users)
-
-### Running sdr.py Locally (Windows)
-
-Running sdr.py directly on your Windows machine provides better USB device access and simplifies the setup:
-
-1. **Run the setup script**:
-   ```
-   setup_local_sdr.bat
-   ```
-   This script will:
-   - Create a Python virtual environment
-   - Install required Python dependencies
-   - Create a default .env file if needed
-   - Provide instructions for RTL-SDR driver installation
-
-2. **Install RTL-SDR drivers** (if using physical hardware):
-   - Download Zadig from https://zadig.akeo.ie/
-   - Plug in your RTL-SDR device
-   - Run Zadig, select your RTL-SDR device, and install the WinUSB driver
-   - Download the RTL-SDR software from https://www.rtl-sdr.com/downloads
-   - Extract the files and add the bin directory to your PATH
-
-3. **Start the ActiveMQ and other services**:
-   ```
-   docker-compose up -d
-   ```
-
-4. **Test the ActiveMQ connection**:
-   ```
-   .venv\Scripts\activate
-   python test_activemq_connection.py
-   ```
-   This will verify that your local machine can connect to the ActiveMQ container.
-
-   > **Important**: When running scripts locally, make sure your `.env` file has `ACTIVEMQ_HOST=localhost` (not "activemq"). The setup script creates this file correctly, but if you're having connection issues, check this setting.
-
-5. **Run sdr.py**:
-   ```
-   python sdr.py
-   ```
-
-The script will automatically detect if an RTL-SDR device is available. If not, it will run in simulation mode.
-
-### Running sdr.py in Docker (Linux)
-
-For Linux users, running in Docker with USB passthrough is still an option:
-
-1. **Modify docker-compose.yml**:
-   Uncomment the sdr service section in docker-compose.yml if you want to run it in Docker.
-
-2. **USB Device Access**:
-   Linux supports direct USB device passthrough to Docker. The docker-compose.yml file is configured to pass through USB devices to the container.
-
-3. **Start all services**:
-   ```bash
-   docker-compose up
-   ```
-
-### WSL2 Configuration (Windows with Docker)
-
-If you prefer to use Docker on Windows with WSL2:
-
-1. Connect your RTL-SDR device
-2. In PowerShell (as Administrator), run:
-   ```powershell
-   usbipd list
-   usbipd bind -b <BUSID>
-   usbipd attach --wsl -b <BUSID>
-   ```
-3. Then in WSL2, verify the device is available with `lsusb`
-4. Start the Docker containers with `docker-compose up`
-
-### Simulation Mode
-
-The sdr.py script includes a fallback simulation mode that activates automatically when:
-- The pyrtlsdr module is not available
-- An RTL-SDR device cannot be accessed
-
-This allows the service to run and send simulated spectrum data to ActiveMQ even without physical hardware.
-
-## License
-
-This project is licensed under the MIT License.
+`versions.json` is read by GitHub Actions. Docker Compose reads `NODE_VERSION` and `PYTHON_VERSION` from `.env`, with its own defaults when those variables are absent. If you change runtime versions, update `versions.json` and your `.env` values together; there is no version-sync script in this repository.
